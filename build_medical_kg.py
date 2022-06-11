@@ -2,7 +2,7 @@ import json
 from py2neo import Graph, Node, Relationship, NodeMatcher, RelationshipMatcher
 
 
-def get_noe4j(ip='http://10.103.11.105:7474', auth=("neo4j", "zhz"), empty=True):
+def get_noe4j(ip='http://10.103.11.105:7474', auth=("neo4j", "zhz"), empty=False):
     graph = Graph(ip, auth=auth)
     if empty:
         graph.delete_all()
@@ -46,18 +46,23 @@ def process(graph, nodes):
             node_labels.append("相互作用")
         # Filter Node Props
         for k, v in node.items():
-            if v in name_list.keys():
+            if v in name_list.keys() and ind != name_list[v]:
                 rels.append([ind, k, name_list[v]])
+                continue
             node_props[k] = v
         graph_node = Node(*node_labels, **node_props)
         graph.create(graph_node)
         node_list.append(graph_node)
 
         if ind % 1000 == 0:
-            print("{} Finished".format(ind))
+            print("{} Node Finished".format(ind))
 
-    for rel in rels:
+    print("Total Relations: {}".format(len(rels)))
+    for ind, rel in enumerate(rels):
         graph.create(Relationship(node_list[rel[0]], rel[1], node_list[rel[2]]))
+
+        if ind % 1000 == 0:
+            print("{} Rels Finished".format(ind))
 
 
 if __name__ == '__main__':
