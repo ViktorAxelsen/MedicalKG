@@ -6,6 +6,14 @@
 
 - **medicine.txt**：药品实体名
 
+- **medicine2.txt**：补充的药品实体名
+
+- **element.txt**：成分实体名
+
+- **illness.txt**：疾病实体名
+
+- **abnormal.txt**：不良反应实体名
+
 - **question_classifier.py**：问题分类模块代码
 
 - **stat_count.py**：查询特定节点或关系的统计数据
