@@ -16,6 +16,10 @@
 
 - **question_classifier.py**：问题分类模块代码
 
+- **question_parser.py**：问题解析模块代码
+
+- **qa.py**：QA系统入口
+
 - **stat_count.py**：查询特定节点或关系的统计数据
 
 - **visualization.py**：根据特定节点以及关系实现实时可视化
@@ -33,6 +37,8 @@
         + **--r_dir**：待查询或询问的关系方向，分为“in”，“out”，“bi”三种模式
 
         + **--r_type**：待查询或询问的关系类型
+
+        + **--cypher**：cypher高级查询
 
         + **支持任意未知的“--key val”形式的参数解析，默认作为节点的固有属性进行查询或询问**
 

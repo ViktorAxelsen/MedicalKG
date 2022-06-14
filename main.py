@@ -2,6 +2,7 @@ import argparse
 from py2neo import Graph
 from visualization import visualize
 from stat_count import count, rel_count
+from qa import QA
 
 
 
@@ -12,6 +13,7 @@ if __name__ == '__main__':
     parser.add_argument("--label_keyword", type=str, default="比索洛尔类")
     parser.add_argument("--r_dir", type=str, default="bi")
     parser.add_argument("--r_type", type=str, default=None)
+    parser.add_argument("--cypher", type=str, default="MATCH (n: `比索洛尔类`) RETURN n")
     args, unknown = parser.parse_known_args()
     extra_args = dict()
     for i, arg in enumerate(unknown):
@@ -21,7 +23,7 @@ if __name__ == '__main__':
     print(extra_args)
     task = args.task
     if task == 1:
-        pass  # QA
+        QA()  # QA
     elif task == 2:
         visualize(graph=graph,
                   label_keyword=args.label_keyword,
@@ -41,6 +43,7 @@ if __name__ == '__main__':
                   r_dir=args.r_dir,
                   r_type=args.r_type)
     elif task == 5:
-        pass  # Cypher Query
+        q = graph.run(args.cypher).data()  # Cypher Query
+        print(q)
     else:
-        pass  # QA
+        QA()  # QA
