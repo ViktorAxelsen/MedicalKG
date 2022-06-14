@@ -6,20 +6,17 @@ from answer_search import *
 class ChatBotGraph:
     def __init__(self):
         self.classifier = QuestionClassifier()
-        self.parser = QuestionPaser()
-        self.searcher = AnswerSearcher()
-
-    def chat_main(self, sent):
+        self.parser = QuestionParser()
+    
+    def chat_main(self, question):
         answer = '不好意思，未查询到相关结果，请尝试换一种提问方式'
-        res_classify = self.classifier.classify(sent)
-        if not res_classify:
-            return answer
-        res_sql = self.parser.parser_main(res_classify)
-        final_answers = self.searcher.search_main(res_sql)
-        if not final_answers:
+        res = self.classifier.classify(question)
+        if not res:
             return answer
         else:
-            return '\n'.join(final_answers)
+            answers = self.parser.parser_main(res)
+            ans = "\n".join(answers)
+        return ans
 
 
 def QA():

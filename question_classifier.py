@@ -64,7 +64,6 @@ class QuestionClassifier:
         meds=["medicine","medicine2","element"]
         single_med=0
         for i in data["args"].values():
-            print(f"i={i}")
             if i[0] in meds:
                 single_med+=1
 
