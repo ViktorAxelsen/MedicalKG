@@ -1,3 +1,6 @@
+"""
+可视化
+"""
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -8,6 +11,15 @@ plt.rcParams['axes.unicode_minus'] = False
 
 
 def check_rel(type):
+    """
+    检查类型字符串，进行合适的精简
+
+    Args:
+        type (str): 关系类型字符串
+
+    Returns:
+        精简后的关系类型字符串
+    """
     if type.startswith("包含"):
         return "包含"
     elif type.startswith("来自"):
@@ -17,6 +29,15 @@ def check_rel(type):
 
 
 def check_query(q):
+    """
+    检查查询q是否存在
+
+    Args:
+        q: 查询结果
+
+    Returns:
+        存在返回True；不存在返回False
+    """
     if not q:
         print("No Match")
         return False
@@ -25,6 +46,18 @@ def check_query(q):
 
 
 def parse(rels, from_list, to_list, rel_dict):
+    """
+    解析关系
+
+    Args:
+        rels: 关系列表
+        from_list (list): 起始节点列表
+        to_list (list): 终止节点列表
+        rel_dict (dict): 关系类型字典
+
+    Returns:
+        起始节点列表，终止节点列表，关系类型字典
+    """
     if not rels:
         return from_list, to_list, rel_dict
     for rel in rels:
@@ -38,6 +71,18 @@ def parse(rels, from_list, to_list, rel_dict):
 
 
 def cut(from_list, to_list, rel_dict, limit):
+    """
+    截断以便于显示在一张图上不至于过于拥挤
+
+    Args:
+        from_list (list): 起始节点列表
+        to_list (list): 终止节点列表
+        rel_dict (dict): 关系类型字典
+        limit (int): 最大显示关系数
+
+    Returns:
+        截断后的起始节点列表，终止节点列表，关系类型字典
+    """
     from_list = from_list[:limit]
     to_list = to_list[:limit]
     to_remove = list(rel_dict.keys())[limit:]
@@ -48,6 +93,18 @@ def cut(from_list, to_list, rel_dict, limit):
 
 
 def visualize(graph, label_keyword, limit=10, r_dir='bi', r_type=None, **prop_keyword):
+    """
+    可视化符合条件的某个节点的知识图谱
+
+    Args:
+        graph: Neo4j数据库
+        label_keyword (str): 待查询节点的label关键字
+        limit (int): 最大显示关系数. Default: 10.
+        r_dir (str): 关系方向，分为：“bi”：双向关系均可；“in”：仅入边关系；“out”：仅出边关系. Default: "bi".
+        r_type: 关系类型. Default: None.
+        **prop_keyword: 待查询节点的固有属性
+    """
+    # 查询出符合条件的节点
     if prop_keyword:
         q = graph.nodes.match(label_keyword).where(**prop_keyword).first()
     else:
@@ -56,6 +113,7 @@ def visualize(graph, label_keyword, limit=10, r_dir='bi', r_type=None, **prop_ke
     if not check_query(q):
         return
 
+    # 获取节点的关系
     out_rels = None
     in_rels = None
     if r_dir == 'bi':
@@ -72,6 +130,7 @@ def visualize(graph, label_keyword, limit=10, r_dir='bi', r_type=None, **prop_ke
     to_list = []
     rel_dict = dict()
 
+    # 解析关系，构建构图所需的列表以及关系字典
     from_list, to_list, rel_dict = parse(out_rels, from_list, to_list, rel_dict)
     from_list, to_list, rel_dict = parse(in_rels, from_list, to_list, rel_dict)
     from_list, to_list, rel_dict = cut(from_list, to_list, rel_dict, limit=limit)
@@ -79,6 +138,7 @@ def visualize(graph, label_keyword, limit=10, r_dir='bi', r_type=None, **prop_ke
     print(to_list)
     print(rel_dict)
 
+    # 构图
     df = pd.DataFrame({'from': from_list, 'to': to_list})
     G = nx.from_pandas_edgelist(df, 'from', 'to', create_using=nx.DiGraph())
     pos = nx.spring_layout(G)
@@ -89,6 +149,14 @@ def visualize(graph, label_keyword, limit=10, r_dir='bi', r_type=None, **prop_ke
 
 
 def visualize_graph(from_list, to_list, rel_dict):
+    """
+    可视化查询知识图谱
+
+    Args:
+        from_list (list): 起始节点列表
+        to_list (list): 终止节点列表
+        rel_dict (dict): 关系类型字典
+    """
     df = pd.DataFrame({'from': from_list, 'to': to_list})
     G = nx.from_pandas_edgelist(df, 'from', 'to', create_using=nx.DiGraph())
     pos = nx.spring_layout(G)

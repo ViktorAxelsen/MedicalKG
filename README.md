@@ -43,3 +43,71 @@
         + **支持任意未知的“--key val”形式的参数解析，默认作为节点的固有属性进行查询或询问**
 
 
+## Usage
+
+### **QA System**
+
+> **启动问答模块**
+
+- **执行以下命令**
+
+```python
+python main.py --task 1
+```
+
+
+### **Visualization**
+
+> **启动可视化模块**
+
+- **执行以下命令**
+
+```python
+python main.py --task 2 \
+    --label_keyword [YOUR_LABEL_KEYWORD] \
+    --r_dir [YOUR_R_DIR] \
+    --r_type [YOUR_R_TYPE] \
+    --[YOUR_PROP_1] [YOUR_VAL_1] \
+    --[YOUR_PROP_2] [YOUR_VAL_2]
+    ......
+```
+
+### **Count**
+
+> **启动节点信息统计模块**
+
+- **执行以下命令**
+
+```python
+python main.py --task 3 \
+    --label_keyword [YOUR_LABEL_KEYWORD] \
+    --[YOUR_PROP_1] [YOUR_VAL_1] \
+    --[YOUR_PROP_2] [YOUR_VAL_2]
+    ......
+```
+
+### **Count Relation**
+
+> **启动关系统计模块**
+
+- **执行以下命令**
+
+```python
+python main.py --task 4 \
+    --label_keyword [YOUR_LABEL_KEYWORD] \
+    --r_dir [YOUR_R_DIR] \
+    --r_type [YOUR_R_TYPE] \
+    --[YOUR_PROP_1] [YOUR_VAL_1] \
+    --[YOUR_PROP_2] [YOUR_VAL_2]
+    ......
+```
+
+### **Cypher Query**
+
+> **启动Cypher查询模块**
+
+- **执行以下命令**
+
+```python
+python main.py --task 5 --cypher [YOUR_CYPHER]
+```
