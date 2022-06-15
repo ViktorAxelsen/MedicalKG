@@ -180,7 +180,7 @@ class QuestionParser:
             if value_nodes[i]["作用取值"] == "有相互作用":
                 answers.append(disease_nodes[i]["name"].strip())
                 #  + ":" + value_nodes[i]["原文信息"])
-        answers = list(set(entities.keys()).difference(set(answers)))
+        answers = list((set(answers)).difference(set(list(entities.keys()))))
         return ["与以下药物存在相互作用"], [answers]
 
     
@@ -416,8 +416,8 @@ class QASystem:
 if __name__ == '__main__':
     
     system = QASystem()
-    for q in ["不良反应心动过速可能是因为什么药品引起的", "福辛普利钠胶囊和利尿剂一起服用的临床指导建议是什么", "吲达帕胺胶囊和盐酸普萘洛尔缓释胶囊合用会产生什么后果", "服用吲达帕胺胶囊有什么禁忌", "吲达帕胺胶囊与哪些药品有相互作用", "缬沙坦氢氯噻嗪片有什么副作用"]:
-    # for q in ["富马酸比索洛尔片有什么禁忌?"]:
+    # for q in ["不良反应心动过速可能是因为什么药品引起的", "福辛普利钠胶囊和利尿剂一起服用的临床指导建议是什么", "吲达帕胺胶囊和盐酸普萘洛尔缓释胶囊合用会产生什么后果", "服用吲达帕胺胶囊有什么禁忌", "吲达帕胺胶囊与哪些药品有相互作用", "缬沙坦氢氯噻嗪片有什么副作用"]:
+    for q in ["服用吲达帕胺胶囊有什么禁忌"]:
         print("输入:", q)
         # ans = system.process("心肌梗死有哪些治疗方案")
         print("输出:")
