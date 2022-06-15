@@ -32,7 +32,7 @@ class QuestionClassifier:
         self.wdtype_dict = self.build_wdtype_dict()
         # 问句疑问词
         # 副作用疑问词,可以是药病相互作用，可以是单个药品可能导致的不良反应
-        self.medicine_symptom_qwds = ["影响","副作用","后果","引起","症状","相互","不良反应","导致","问题"]
+        self.medicine_symptom_qwds = ["影响","副作用","后果","引起","症状","不良反应","导致","问题"]
         # 药药相互作用疑问词，药药冲突
         self.med_med_relation_qwds=["服用","冲突","哪些药","产生影响","合用","一起"]
         # 临床指导建议
@@ -86,7 +86,7 @@ class QuestionClassifier:
         # 二、双药品类
         if single_med!=1:
             # 5.A药品和B药品合用会产生哪些后果？
-            if self.check_words(self.med_med_relation_qwds,question):
+            if self.check_words(self.med_med_relation_qwds,question) and self.check_words(self.medicine_symptom_qwds,question):
                 question_type="med_med_symptom"
                 question_types.append(question_type)
             # 6.A药品和B药品一起服用的临床指导建议是什么？
