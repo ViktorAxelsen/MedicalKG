@@ -2,21 +2,24 @@
 
 ## Code Structure
 
+- data
+    - **medicine.txt**：药品实体名
+
+    - **medicine2.txt**：补充的药品实体名
+
+    - **element.txt**：成分实体名
+
+    - **illness.txt**：疾病实体名
+
+    - **abnormal.txt**：不良反应实体名
+
 - **build_medical_kg.py**：导入Neo4j数据库
-
-- **medicine.txt**：药品实体名
-
-- **medicine2.txt**：补充的药品实体名
-
-- **element.txt**：成分实体名
-
-- **illness.txt**：疾病实体名
-
-- **abnormal.txt**：不良反应实体名
 
 - **question_classifier.py**：问题分类模块代码
 
-- **question_parser.py**：问题解析模块代码
+- **question_parser.py**：问题解析和答案返回模块代码
+
+- **answer_search.py**：具体查询执行模块
 
 - **qa.py**：QA系统入口
 

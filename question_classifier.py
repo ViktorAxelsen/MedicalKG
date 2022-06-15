@@ -13,11 +13,11 @@ class QuestionClassifier:
         # 加载预训练模型
 
         #　特征词路径
-        self.medicine_path=os.path.join(cur_dir,"medicine.txt")
-        self.medicine2_path=os.path.join(cur_dir,"medicine2.txt")
-        self.element_path=os.path.join(cur_dir,"element.txt")
-        self.abnormal_path=os.path.join(cur_dir,"abnormal.txt")
-        self.illness_path=os.path.join(cur_dir,"illness.txt")
+        self.medicine_path=os.path.join(cur_dir,"./data/medicine.txt")
+        self.medicine2_path=os.path.join(cur_dir,"./data/medicine2.txt")
+        self.element_path=os.path.join(cur_dir,"./data/element.txt")
+        self.abnormal_path=os.path.join(cur_dir,"./data/abnormal.txt")
+        self.illness_path=os.path.join(cur_dir,"./data/illness.txt")
         # 加载特征词
         self.medicine_wds=[i.strip() for i in open(self.medicine_path) if i.strip()]
         self.medicine2_wds=[i.strip() for i in open(self.medicine2_path) if i.strip()]
@@ -42,7 +42,7 @@ class QuestionClassifier:
         # 疾病的治疗方案
         self.disease_cure_qwds=["治疗","诊疗","方案","怎么治"]
 
-        print('model init finished ......')
+        # print('model init finished ......')
 
         return
 
