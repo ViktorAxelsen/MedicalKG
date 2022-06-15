@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-# coding: utf-8
-# File: question_parser.py
-# Author: lhy<lhy_in_blcu@126.com,https://huangyong.github.io>
-# Date: 18-10-4
 from answer_search import AnswerSearcher
+from visualization import visualize_graph
 
 def handle(text):
     for i in "01234567890.、，。,":
@@ -13,12 +9,18 @@ def handle(text):
 class QuestionParser:
     def __init__(self):
         self.searcher = AnswerSearcher()
+    
+    def init_visualize_assets(self):
+        self.src = []
+        self.dst = []
+        self.rels = {}
 
     def parser_main(self, res_classify):
         entity_dict = res_classify['args']
         question_types = res_classify['question_types']
         answers = []
         for question_type in question_types:
+            self.init_visualize_assets()
             # 1.药病正负相关关系，比如A药可能导致哪些后果？
             # 5.某某药品可能导致哪些不良反应，比如A药可能导致哪些后果？它和问题1的区别只能在查询时进行筛选
             if question_type == 'medicine_symptom':
@@ -44,32 +46,74 @@ class QuestionParser:
 
             if any(values):
                 answers.append(self.build_answer(keys, values))
+            self.visualize()
         return answers
     
+    def update_vis_assets(self, assets):
+        self.src += assets[0]
+        self.dst += assets[1]
+        self.rels.update(assets[2])
+
+    
+    def visualize(self):
+        return visualize_graph(self.src, self.dst, self.rels)
     
 
     def med_symptom(self, entities):
+        '''
+        description: 
+            search for taboo of specific medicine
+        args:
+            entities: a dict containing entity names and corresponding attributes, only name is used here
+        return:
+            answer_key: List[str]
+            answer_str: List[List[str]]
+        '''
+        # assets for visualization
+        src = []
+        dst = []
+        rels = []
+
         if not entities:
             return []
 
-        # 查询语句
         answers = []
         # 1.药病正负相关关系，比如A药可能导致哪些后果？
 
         # find medical node
         query_for_node = ["MATCH (m) where m.name = '{0}' return m".format(i) for i in entities]
         relevant_node = self.searcher.search_main(query_for_node)
+        
 
         # find 药病相互作用 relations
         valid_nodes = []
         for node in relevant_node:
-            valid_nodes += self.searcher.get_valid_start_node(node, ["包含实体1", "包含实体2"], node_type=["药病相互作用"])
-        # get values
+            tmp, assets = self.searcher.get_valid_start_node(node, ["包含实体1", "包含实体2"], node_type=["药病相互作用"])
+            valid_nodes += tmp
+            self.update_vis_assets(assets)
+
+
+        # get related values
         value_nodes = []
         disease_nodes = []
         for node in valid_nodes:
-            value_nodes += [r.end_node for r in self.searcher.match_rel(node1=node, rel_type="有无药病正负相关")]
-            disease_nodes += [r.end_node for r in self.searcher.match_rel(node1=node, rel_type="包含实体2")]
+            tmp1, assets = self.searcher.get_valid_end_node(node, rel_type="有无药病正负相关")
+            value_nodes += tmp1
+            self.update_vis_assets(assets)
+            tmp2, assets = self.searcher.get_valid_end_node(node, rel_type="包含实体2")
+            disease_nodes += tmp2
+            self.update_vis_assets(assets)
+
+
+            # update visualization ####################
+            src += [node["name"]] * len(tmp1)
+            dst += [n["name"] for n in tmp1]
+            rels += ["有无药病正负相关"] * len(tmp1)
+            src += [node["name"]] * len(tmp2)
+            dst += [n["name"] for n in tmp2]
+            rels += ["包含实体2"] * len(tmp2)
+            ###########################################
+
         # GET ANSWERS
         for i in range(len(disease_nodes)):
             if disease_nodes[i]["name"] == "实验室检查":
@@ -78,13 +122,15 @@ class QuestionParser:
             elif value_nodes[i]["作用取值"] == "正相关":
                 answers.append(disease_nodes[i]["name"])
         
-        # print("rels:", [r.start_node.labels for r in interaction])
 
-        # 不良反应
+        # 2. 药物可能导致的不良反应 #######################################################
         potential_answers = []
         reaction_nodes = []
         for node in relevant_node:
-            reaction_nodes += self.searcher.get_valid_start_node(node, rel_type="来自药品", node_type=["不良反应"])
+            tmp, assets = self.searcher.get_valid_start_node(node, rel_type="来自药品", node_type=["不良反应"])
+            reaction_nodes += tmp
+            self.update_vis_assets(assets)
+
         
         for n in reaction_nodes:
             if n["不良反应症状"]:
@@ -92,12 +138,19 @@ class QuestionParser:
             else:
                 potential_answers.append(handle(n["原文信息"]))
         
-        return ["高危", "可能"], [answers, potential_answers]
-        # ans = self.build_answer(["高危", "可能"], [answers, potential_answers])
-        # print(ans)
-        # return answers
+        return ["高危不良反应", "可能不良反应"], [answers, potential_answers]
+
     
     def med_med_rel(self, entities):
+        '''
+        description: 
+            search for taboo of specific medicine
+        args:
+            entities: a dict containing entity names and corresponding attributes, only name is used here
+        return:
+            answer_key: List[str]
+            answer_str: List[List[str]]
+        '''
         answers = []
         # find medical node
         query_for_node = ["MATCH (m) where m.name = '{0}' return m".format(i) for i in entities]
@@ -106,14 +159,21 @@ class QuestionParser:
         # find 药病相互作用 relations
         valid_nodes = []
         for node in relevant_node:
-            valid_nodes += self.searcher.get_valid_start_node(node, ["包含实体1", "包含实体2"], node_type=["药药相互作用"])
+            tmp, assets = self.searcher.get_valid_start_node(node, ["包含实体1", "包含实体2"], node_type=["药药相互作用"])
+            valid_nodes += tmp
+            self.update_vis_assets(assets)
+
         # get values
         value_nodes = []
         disease_nodes = []
         for node in valid_nodes:
-            value_nodes += self.searcher.get_valid_end_node(node, rel_type="有无相互作用存在")
+            tmp, assets = self.searcher.get_valid_end_node(node, rel_type="有无相互作用存在")
+            value_nodes += tmp
+            self.update_vis_assets(assets)
 
-            disease_nodes += self.searcher.get_valid_end_node(node, rel_type=["包含实体2"])
+            tmp, assets = self.searcher.get_valid_end_node(node, rel_type=["包含实体2"])
+            disease_nodes += tmp
+            self.update_vis_assets(assets)
 
         # GET ANSWERS
         for i in range(len(disease_nodes)):
@@ -122,11 +182,19 @@ class QuestionParser:
                 #  + ":" + value_nodes[i]["原文信息"])
         answers = list(set(entities.keys()).difference(set(answers)))
         return ["与以下药物存在相互作用"], [answers]
-        # ans = self.build_answer(["与以下药物存在相互作用"], [answers])
-        # print(ans)
-        # return ans
+
     
     def build_answer(self, keys, values, default="无相关信息"):
+        '''
+        description: 
+            convert answer_keys and answer_str to string
+        args:
+            keys: List[str]
+            values: List[List[str]]
+            default: when any value is empty, return default
+        return:
+            ans: str
+        '''
         assert len(keys) == len(values)
         if not any(values):
             ans = default
@@ -139,17 +207,29 @@ class QuestionParser:
 
     
     def med_taboo(self, entities):
+        '''
+        description: 
+            search for taboo of specific medicine
+        args:
+            entities: a dict containing entity names and corresponding attributes, only name is used here
+        return:
+            answer_key: List[str]
+            answer_str: List[List[str]]
+        '''        
         query_for_node = ["MATCH (m) where m.name = '{0}' return m".format(i) for i in entities]
         relevant_node = self.searcher.search_main(query_for_node)
 
         reaction_nodes = []
         for node in relevant_node:
-            reaction_nodes += self.searcher.get_valid_start_node(node, rel_type="来自药品", node_type=["禁忌"])
+            tmp, assets = self.searcher.get_valid_start_node(node, rel_type="来自药品", node_type=["禁忌"])
+            reaction_nodes += tmp
+            self.update_vis_assets(assets)
         
         potential_answers = []
         for n in reaction_nodes:
-            people = self.searcher.get_valid_end_node(n, rel_type="禁忌人群")
+            people, assets = self.searcher.get_valid_end_node(n, rel_type="禁忌人群")
             if people:
+                self.update_vis_assets(assets)
                 potential_answers.append(people[0]["name"])
 
             # potential_answers = [n["原文信息"] for n in reaction_nodes]
@@ -158,11 +238,18 @@ class QuestionParser:
 
         
         return ["禁忌"], [potential_answers]
-        # ans = self.build_answer(["禁忌"], [potential_answers])
-        # print(ans)
-        # return ans
+
     
     def med_med_symptom(self, entities):
+        '''
+        description: 
+            search for taboo of specific medicine
+        args:
+            entities: a dict containing entity names and corresponding attributes, only name is used here
+        return:
+            answer_key: List[str]
+            answer_str: List[List[str]]
+        '''
         assert len(entities) == 2, print("med_med_symptom must have exactly 2 entities")
         answers = []
         # find medical node
@@ -170,18 +257,23 @@ class QuestionParser:
         relevant_node = self.searcher.search_main(query_for_node)
 
         # find 药病相互作用 relations
-        valid_nodes1 = self.searcher.get_valid_start_node(relevant_node[0], ["包含实体1", "包含实体2"], node_type=["药药相互作用"])
-        valid_nodes2 = self.searcher.get_valid_start_node(relevant_node[1], ["包含实体1", "包含实体2"], node_type=["药药相互作用"])
+        valid_nodes1, assets1 = self.searcher.get_valid_start_node(relevant_node[0], ["包含实体1", "包含实体2"], node_type=["药药相互作用"])
+        valid_nodes2, assets2 = self.searcher.get_valid_start_node(relevant_node[1], ["包含实体1", "包含实体2"], node_type=["药药相互作用"])
+        self.update_vis_assets(assets1)
+        self.update_vis_assets(assets2)
 
         valid_nodes = list(set(valid_nodes1).intersection(set(valid_nodes2)))
         # get values
         value_nodes = []
         outcome_nodes = []
         for node in valid_nodes:
-            outcome = self.searcher.get_valid_end_node(node, rel_type=["有作用结果"])
+            outcome, assets = self.searcher.get_valid_end_node(node, rel_type=["有作用结果"])
             if outcome:
-                value_nodes += self.searcher.get_valid_end_node(node, rel_type="有无相互作用存在")
+                self.update_vis_assets(assets)
+                tmp, assets = self.searcher.get_valid_end_node(node, rel_type="有无相互作用存在")
+                value_nodes += tmp
                 outcome_nodes += outcome
+                self.update_vis_assets(assets)
 
 
         # GET ANSWERS
@@ -190,11 +282,18 @@ class QuestionParser:
                 answers.append(outcome_nodes[i]["作用取值"])
 
         return ["相互作用结果"], [answers]
-        # ans = self.build_answer(["相互作用结果"], [answers])
-        # print(ans)
-        # return ans
+
 
     def med_med_clinic(self, entities):
+        '''
+        description: 
+            search for taboo of specific medicine
+        args:
+            entities: a dict containing entity names and corresponding attributes, only name is used here
+        return:
+            answer_key: List[str]
+            answer_str: List[List[str]]
+        '''
         assert len(entities) == 2, print("med_med_clinic must have exactly 2 entities")
         answers = []
         # find medical node
@@ -202,14 +301,18 @@ class QuestionParser:
         relevant_node = self.searcher.search_main(query_for_node)
 
         # find 药病相互作用 relations
-        valid_nodes1 = self.searcher.get_valid_start_node(relevant_node[0], ["包含实体1", "包含实体2"], node_type=["药药相互作用"])
-        valid_nodes2 = self.searcher.get_valid_start_node(relevant_node[1], ["包含实体1", "包含实体2"], node_type=["药药相互作用"])
+        valid_nodes1, assets1 = self.searcher.get_valid_start_node(relevant_node[0], ["包含实体1", "包含实体2"], node_type=["药药相互作用"])
+        valid_nodes2, assets2 = self.searcher.get_valid_start_node(relevant_node[1], ["包含实体1", "包含实体2"], node_type=["药药相互作用"])
+        self.update_vis_assets(assets1)
+        self.update_vis_assets(assets2)
 
         valid_nodes = list(set(valid_nodes1).intersection(set(valid_nodes2)))
         # get values
         value_nodes = []
         for node in valid_nodes:
-            value_nodes += self.searcher.get_valid_end_node(node, rel_type="有临床指导")
+            tmp, assets = self.searcher.get_valid_end_node(node, rel_type="有临床指导")
+            value_nodes += tmp
+            self.update_vis_assets(assets)
 
         # GET ANSWERS
 
@@ -217,48 +320,92 @@ class QuestionParser:
             answers.append(value_nodes[i]["作用取值"])
 
         return ["临床建议"], [answers]
-        # ans = self.build_answer(["临床建议"], [answers])
-        # print(ans)
-        # return ans
+
     
     def symptom_cause(self, entities):
+        '''
+        description: 
+            search for taboo of specific medicine
+        args:
+            entities: a dict containing entity names and corresponding attributes, only name is used here
+        return:
+            answer_key: List[str]
+            answer_str: List[List[str]]
+        '''
         query_for_node = ["MATCH (m) where m.name = '{0}' return m".format(i) for i in entities]
         relevant_node = self.searcher.search_main(query_for_node)
         
         reaction_node = []
         for node in relevant_node:
-            reaction_node += self.searcher.get_valid_start_node(node, rel_type=["涉及疾病", "不良反应症状"], node_type=["不良反应"])
+            tmp, assets = self.searcher.get_valid_start_node(node, rel_type=["涉及疾病", "不良反应症状"], node_type=["不良反应"])
+            reaction_node += tmp
+            self.update_vis_assets(assets)
+
         med_nodes = []
         for node in reaction_node:
-            med_nodes += self.searcher.get_valid_end_node(node, rel_type="来自药品")
+            tmp, assets = self.searcher.get_valid_end_node(node, rel_type="来自药品")
+            med_nodes += tmp
+            self.update_vis_assets(assets)
         
         answer = [n["name"] for n in med_nodes]
         return ["可能导致该症状的药物"], [answer]
-        # ans = self.build_answer(["可能导致该症状的药物"], [answer])
-        # print(ans)
-        # return ans
+
     
     def disease_cure(self, entities):
+        '''
+        description: 
+            search for taboo of specific medicine
+        args:
+            entities: a dict containing entity names and corresponding attributes, only name is used here
+        return:
+            answer_key: List[str]
+            answer_str: List[List[str]]
+        '''
         answers =[]
         query_for_node = ["MATCH (m) where m.`rdf:subject` = '{0}' return m".format(i) for i in entities]
         relevant_node = self.searcher.search_main(query_for_node)
         cure_nodes = []
         for node in relevant_node:
-            cure_nodes += self.searcher.get_valid_start_node(node, rel_type="有描述知识", node_type=["疾病相关治疗"])
+            tmp, assets = self.searcher.get_valid_start_node(node, rel_type="有描述知识", node_type=["疾病相关治疗"])
+            cure_nodes += tmp
+            self.update_vis_assets(assets)
+
         cure_methods = []
         for node in cure_nodes:
-            cure_methods += self.searcher.get_valid_end_node(node, rel_type="指南原文信息")
+            tmp, assets = self.searcher.get_valid_end_node(node, rel_type="指南原文信息")
+            cure_methods += tmp
+            self.update_vis_assets(assets)
         
         answers = [n["原文信息"] for n in cure_methods]
         return ["治疗方案"], [answers]
 
+from question_classifier import QuestionClassifier
+class QASystem:
+    def __init__(self):
+        self.classifier = QuestionClassifier()
+        self.parser = QuestionParser()
+    
+    def process(self, question):
+        res = self.classifier.classify(question)
+        if not res:
+            ans = "无法回答"
+        else:
+            answers = self.parser.parser_main(res)
+            ans = "\n".join(answers)
+        if not ans:
+            ans = "无法回答"
+        return ans
+
 if __name__ == '__main__':
     
-    
     system = QASystem()
-    # ans = system.process("心肌梗死有哪些治疗方案")
-    ans = system.process("不良反应心动过速可能是因为什么药品引起的")
-    print(ans)
+    # for q in ["不良反应心动过速可能是因为什么药品引起的", "福辛普利钠胶囊和利尿剂一起服用的临床指导建议是什么", "吲达帕胺胶囊和盐酸普萘洛尔缓释胶囊合用会产生什么后果", "服用吲达帕胺胶囊有什么禁忌", "吲达帕胺胶囊与哪些药品有相互作用", "缬沙坦氢氯噻嗪片有什么副作用"]:
+    for q in ["富马酸比索洛尔片有什么禁忌?"]:
+        print("输入:", q)
+        # ans = system.process("心肌梗死有哪些治疗方案")
+        print("输出:")
+        ans = system.process(q)
+        print(ans)
     # system.process("福辛普利钠胶囊和利尿剂一起服用的临床指导建议是什么")
     # system.process("吲达帕胺胶囊和盐酸普萘洛尔缓释胶囊合用会产生什么后果")
     # system.process("吲达帕胺胶囊禁忌")

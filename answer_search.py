@@ -1,3 +1,13 @@
+'''
+Author: cyl628 yl-chen21@mails.tsinghua.edu.cn
+Date: 2022-06-14 15:21:55
+LastEditors: cyl628 yl-chen21@mails.tsinghua.edu.cn
+LastEditTime: 2022-06-15 11:38:54
+FilePath: /BioMedicalQA/MedicalKG/answer_search.py
+Description: 
+
+Copyright (c) 2022 by cyl628 yl-chen21@mails.tsinghua.edu.cn, All Rights Reserved. 
+'''
 #!/usr/bin/env python3
 # coding: utf-8
 # File: answer_search.py
@@ -38,29 +48,56 @@ class AnswerSearcher:
         return list(q)
     
     def get_valid_start_node(self, end_node, rel_type=None, node_type=None):
+        rels = [] # relation saving
         nodes = []
         if rel_type is None or not isinstance(rel_type, list):
-            nodes += self.match_rel(node1=None, node2=end_node, rel_type=rel_type)
+            tmp = self.match_rel(node1=None, node2=end_node, rel_type=rel_type)
+            nodes += tmp
+            rels += [rel_type] * (len(tmp))
+
         else:
             for r in rel_type:
-                nodes += self.match_rel(node1=None, node2=end_node, rel_type=r)
+                tmp = self.match_rel(node1=None, node2=end_node, rel_type=r)
+                nodes += tmp
+                rels += [r] * len(tmp)
+
         nodes = [r.start_node for r in nodes]
         # print([str(n.labels) for n in nodes])
         if node_type:
+            rels = [rels[i] for i, n in enumerate(nodes) if any([t in n.labels for t in node_type])]
             nodes = [n for n in nodes if any([t in n.labels for t in node_type])]
-        return nodes
+
+        src = [n["name"] for n in nodes]
+        dst = [end_node["name"]] * len(src)
+        assert len(src) == len(dst) == len(rels)
+        rels = {item:rels[i] for i, item in enumerate(zip(src, dst))}
+        return nodes, (src, dst, rels)
     
     def get_valid_end_node(self, start_node, rel_type=None, node_type=None):
+        rels = []
         nodes = []
         if rel_type is None or not isinstance(rel_type, list):
-            nodes += self.match_rel(node1=start_node, node2=None, rel_type=rel_type)
+            tmp = self.match_rel(node1=start_node, node2=None, rel_type=rel_type)
+            nodes += tmp
+            rels += [rel_type] * (len(tmp))
+
         else:
             for r in rel_type:
-                nodes += self.match_rel(node1=start_node, node2=None, rel_type=r)
+                tmp = self.match_rel(node1=start_node, node2=None, rel_type=r)
+                nodes += tmp
+                rels += [r] * len(tmp)
+
         nodes = [r.end_node for r in nodes]
+
         if node_type:
+            rels = [rels[i] for i, n in enumerate(nodes) if any([t in n.labels for t in node_type])]
             nodes = [n for n in nodes if any([t in n.labels for t in node_type])]
-        return nodes
+        
+        dst = [n["name"] for n in nodes]
+        src = [start_node["name"]] * len(dst)
+        assert len(src) == len(dst) == len(rels)
+        rels = {item:rels[i] for i, item in enumerate(zip(src, dst))}
+        return nodes, (src, dst, rels)
 
 
 
