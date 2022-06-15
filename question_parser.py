@@ -62,7 +62,7 @@ class QuestionParser:
     def med_symptom(self, entities):
         '''
         description: 
-            search for taboo of specific medicine
+            search for symptom and impact of specific medicine
         args:
             entities: a dict containing entity names and corresponding attributes, only name is used here
         return:
@@ -144,7 +144,7 @@ class QuestionParser:
     def med_med_rel(self, entities):
         '''
         description: 
-            search for taboo of specific medicine
+            search for interaction with other medicines of specific medicine
         args:
             entities: a dict containing entity names and corresponding attributes, only name is used here
         return:
@@ -156,7 +156,7 @@ class QuestionParser:
         query_for_node = ["MATCH (m) where m.name = '{0}' return m".format(i) for i in entities]
         relevant_node = self.searcher.search_main(query_for_node)
 
-        # find 药病相互作用 relations
+        # find 药药相互作用 relations
         valid_nodes = []
         for node in relevant_node:
             tmp, assets = self.searcher.get_valid_start_node(node, ["包含实体1", "包含实体2"], node_type=["药药相互作用"])
@@ -215,16 +215,19 @@ class QuestionParser:
         return:
             answer_key: List[str]
             answer_str: List[List[str]]
-        '''        
+        '''
+        # get main node        
         query_for_node = ["MATCH (m) where m.name = '{0}' return m".format(i) for i in entities]
         relevant_node = self.searcher.search_main(query_for_node)
-
+        
+        # get 禁忌 node
         reaction_nodes = []
         for node in relevant_node:
             tmp, assets = self.searcher.get_valid_start_node(node, rel_type="来自药品", node_type=["禁忌"])
             reaction_nodes += tmp
             self.update_vis_assets(assets)
         
+        # get 禁忌人群 or 原文信息
         potential_answers = []
         for n in reaction_nodes:
             people, assets = self.searcher.get_valid_end_node(n, rel_type="禁忌人群")
@@ -232,7 +235,6 @@ class QuestionParser:
                 self.update_vis_assets(assets)
                 potential_answers.append(people[0]["name"])
 
-            # potential_answers = [n["原文信息"] for n in reaction_nodes]
             else:
                 potential_answers.append(handle(n["原文信息"]))
 
@@ -243,26 +245,32 @@ class QuestionParser:
     def med_med_symptom(self, entities):
         '''
         description: 
-            search for taboo of specific medicine
+            search for interaction result of two medicines
         args:
             entities: a dict containing entity names and corresponding attributes, only name is used here
         return:
             answer_key: List[str]
             answer_str: List[List[str]]
         '''
-        assert len(entities) == 2, print("med_med_symptom must have exactly 2 entities")
+        try:
+            assert len(entities) == 2
+        except:
+            print("med_med_symptom must have exactly 2 entities")
+            return []
         answers = []
-        # find medical node
+        # find main node
         query_for_node = ["MATCH (m) where m.name = '{0}' return m".format(i) for i in entities]
         relevant_node = self.searcher.search_main(query_for_node)
 
-        # find 药病相互作用 relations
+        # find 药药相互作用 relations
         valid_nodes1, assets1 = self.searcher.get_valid_start_node(relevant_node[0], ["包含实体1", "包含实体2"], node_type=["药药相互作用"])
         valid_nodes2, assets2 = self.searcher.get_valid_start_node(relevant_node[1], ["包含实体1", "包含实体2"], node_type=["药药相互作用"])
         self.update_vis_assets(assets1)
         self.update_vis_assets(assets2)
 
+        # 去重
         valid_nodes = list(set(valid_nodes1).intersection(set(valid_nodes2)))
+
         # get values
         value_nodes = []
         outcome_nodes = []
@@ -287,25 +295,31 @@ class QuestionParser:
     def med_med_clinic(self, entities):
         '''
         description: 
-            search for taboo of specific medicine
+            search for clinical advice for taking two medicines at the same time
         args:
             entities: a dict containing entity names and corresponding attributes, only name is used here
         return:
             answer_key: List[str]
             answer_str: List[List[str]]
         '''
-        assert len(entities) == 2, print("med_med_clinic must have exactly 2 entities")
+        try:
+            assert len(entities) == 2
+        except:
+            print("med_med_clinic must have exactly 2 entities")
+            return []
+
         answers = []
         # find medical node
         query_for_node = ["MATCH (m) where m.name = '{0}' return m".format(i) for i in entities]
         relevant_node = self.searcher.search_main(query_for_node)
 
-        # find 药病相互作用 relations
+        # find 药药相互作用 relations
         valid_nodes1, assets1 = self.searcher.get_valid_start_node(relevant_node[0], ["包含实体1", "包含实体2"], node_type=["药药相互作用"])
         valid_nodes2, assets2 = self.searcher.get_valid_start_node(relevant_node[1], ["包含实体1", "包含实体2"], node_type=["药药相互作用"])
         self.update_vis_assets(assets1)
         self.update_vis_assets(assets2)
 
+        # 去重
         valid_nodes = list(set(valid_nodes1).intersection(set(valid_nodes2)))
         # get values
         value_nodes = []
@@ -315,7 +329,6 @@ class QuestionParser:
             self.update_vis_assets(assets)
 
         # GET ANSWERS
-
         for i in range(len(value_nodes)):
             answers.append(value_nodes[i]["作用取值"])
 
@@ -325,22 +338,24 @@ class QuestionParser:
     def symptom_cause(self, entities):
         '''
         description: 
-            search for taboo of specific medicine
+            search for symptom cause (usually return medicines)
         args:
             entities: a dict containing entity names and corresponding attributes, only name is used here
         return:
             answer_key: List[str]
             answer_str: List[List[str]]
         '''
+        # get main node
         query_for_node = ["MATCH (m) where m.name = '{0}' return m".format(i) for i in entities]
         relevant_node = self.searcher.search_main(query_for_node)
         
+        # get reaction node
         reaction_node = []
         for node in relevant_node:
             tmp, assets = self.searcher.get_valid_start_node(node, rel_type=["涉及疾病", "不良反应症状"], node_type=["不良反应"])
             reaction_node += tmp
             self.update_vis_assets(assets)
-
+        # get medicine linking to reaction node
         med_nodes = []
         for node in reaction_node:
             tmp, assets = self.searcher.get_valid_end_node(node, rel_type="来自药品")
@@ -354,7 +369,7 @@ class QuestionParser:
     def disease_cure(self, entities):
         '''
         description: 
-            search for taboo of specific medicine
+            search for cure of a disease
         args:
             entities: a dict containing entity names and corresponding attributes, only name is used here
         return:
@@ -362,14 +377,16 @@ class QuestionParser:
             answer_str: List[List[str]]
         '''
         answers =[]
+        # get main node
         query_for_node = ["MATCH (m) where m.`rdf:subject` = '{0}' return m".format(i) for i in entities]
         relevant_node = self.searcher.search_main(query_for_node)
+        # get cure node
         cure_nodes = []
         for node in relevant_node:
             tmp, assets = self.searcher.get_valid_start_node(node, rel_type="有描述知识", node_type=["疾病相关治疗"])
             cure_nodes += tmp
             self.update_vis_assets(assets)
-
+        # get cure methods node
         cure_methods = []
         for node in cure_nodes:
             tmp, assets = self.searcher.get_valid_end_node(node, rel_type="指南原文信息")
@@ -399,8 +416,8 @@ class QASystem:
 if __name__ == '__main__':
     
     system = QASystem()
-    # for q in ["不良反应心动过速可能是因为什么药品引起的", "福辛普利钠胶囊和利尿剂一起服用的临床指导建议是什么", "吲达帕胺胶囊和盐酸普萘洛尔缓释胶囊合用会产生什么后果", "服用吲达帕胺胶囊有什么禁忌", "吲达帕胺胶囊与哪些药品有相互作用", "缬沙坦氢氯噻嗪片有什么副作用"]:
-    for q in ["富马酸比索洛尔片有什么禁忌?"]:
+    for q in ["不良反应心动过速可能是因为什么药品引起的", "福辛普利钠胶囊和利尿剂一起服用的临床指导建议是什么", "吲达帕胺胶囊和盐酸普萘洛尔缓释胶囊合用会产生什么后果", "服用吲达帕胺胶囊有什么禁忌", "吲达帕胺胶囊与哪些药品有相互作用", "缬沙坦氢氯噻嗪片有什么副作用"]:
+    # for q in ["富马酸比索洛尔片有什么禁忌?"]:
         print("输入:", q)
         # ans = system.process("心肌梗死有哪些治疗方案")
         print("输出:")

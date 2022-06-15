@@ -45,6 +45,11 @@
 
 ## Usage
 
+### Install required pacjakes
+```shell
+pip install -r requirements.txt
+```
+
 ### **QA System**
 
 > **启动问答模块**

@@ -1,2 +1,3 @@
-py2neo
-pyahocorasick
+py2neo==2021.2.3
+pyahocorasick==1.4.4
+networkx==2.8.4
