@@ -20,7 +20,7 @@ class QuestionParser:
         question_types = res_classify['question_types']
         answers = []
         for question_type in question_types:
-            self.init_visualize_assets()
+            self.init_visualize_assets() # initialize required data for query visualization
             # 1.药病正负相关关系，比如A药可能导致哪些后果？
             # 5.某某药品可能导致哪些不良反应，比如A药可能导致哪些后果？它和问题1的区别只能在查询时进行筛选
             if question_type == 'medicine_symptom':
@@ -46,10 +46,13 @@ class QuestionParser:
 
             if any(values):
                 answers.append(self.build_answer(keys, values))
-            self.visualize()
+            self.visualize() # visualize
         return answers
     
     def update_vis_assets(self, assets):
+        """
+        update data required for visualization
+        """
         self.src += assets[0]
         self.dst += assets[1]
         self.rels.update(assets[2])

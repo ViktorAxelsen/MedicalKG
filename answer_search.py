@@ -48,8 +48,21 @@ class AnswerSearcher:
         return list(q)
     
     def get_valid_start_node(self, end_node, rel_type=None, node_type=None):
+        '''
+        description: 
+            search for valid start node according to given end node, relation type and end node type
+        args:
+            end_node: Node object in neo4j
+            rel_type: Union[str, List[str]] target relations
+            node_type: List[str] target end node types
+
+        return:
+            nodes: List[Node] target nodes
+            (src, dst, rels): (List[str], List[str], Dict[Tuple:str]) related relation pairs
+        '''
         rels = [] # relation saving
         nodes = []
+        # get each relation
         if rel_type is None or not isinstance(rel_type, list):
             tmp = self.match_rel(node1=None, node2=end_node, rel_type=rel_type)
             nodes += tmp
@@ -60,13 +73,13 @@ class AnswerSearcher:
                 tmp = self.match_rel(node1=None, node2=end_node, rel_type=r)
                 nodes += tmp
                 rels += [r] * len(tmp)
-
+        # get nodes
         nodes = [r.start_node for r in nodes]
-        # print([str(n.labels) for n in nodes])
+        # filter nodes
         if node_type:
             rels = [rels[i] for i, n in enumerate(nodes) if any([t in n.labels for t in node_type])]
             nodes = [n for n in nodes if any([t in n.labels for t in node_type])]
-
+        # get src, dst, and rels dict
         src = [n["name"] for n in nodes]
         dst = [end_node["name"]] * len(src)
         assert len(src) == len(dst) == len(rels)
@@ -74,25 +87,39 @@ class AnswerSearcher:
         return nodes, (src, dst, rels)
     
     def get_valid_end_node(self, start_node, rel_type=None, node_type=None):
+        '''
+        description: 
+            search for valid end node according to given start node, relation type and end node type
+        args:
+            start_node: Node object in neo4j
+            rel_type: Union[str, List[str]] target relations
+            node_type: List[str] target end node types
+
+        return:
+            nodes: List[Node] target nodes
+            (src, dst, rels): (List[str], List[str], Dict[Tuple:str]) related relation pairs
+        '''
         rels = []
         nodes = []
+        # find each target relation
         if rel_type is None or not isinstance(rel_type, list):
             tmp = self.match_rel(node1=start_node, node2=None, rel_type=rel_type)
             nodes += tmp
             rels += [rel_type] * (len(tmp))
-
         else:
             for r in rel_type:
                 tmp = self.match_rel(node1=start_node, node2=None, rel_type=r)
                 nodes += tmp
                 rels += [r] * len(tmp)
-
+        # get nodes
         nodes = [r.end_node for r in nodes]
 
+        # filter target node types
         if node_type:
             rels = [rels[i] for i, n in enumerate(nodes) if any([t in n.labels for t in node_type])]
             nodes = [n for n in nodes if any([t in n.labels for t in node_type])]
-        
+
+        # get src node name, dst node name, and relation dict
         dst = [n["name"] for n in nodes]
         src = [start_node["name"]] * len(dst)
         assert len(src) == len(dst) == len(rels)
