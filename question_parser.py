@@ -273,6 +273,17 @@ class QuestionParser:
 
         # 去重
         valid_nodes = list(set(valid_nodes1).intersection(set(valid_nodes2)))
+        node_names = [n["name"] for n in valid_nodes]
+        rels = {}
+        for k in self.rels:
+            if k[0] not in node_names and k[1] not in node_names:
+                pass
+            else:
+                rels[k] = self.rels[k]
+        self.rels = rels
+
+
+                
 
         # get values
         value_nodes = []
@@ -291,6 +302,14 @@ class QuestionParser:
         for i in range(len(value_nodes)):
             if value_nodes[i]["作用取值"] == "有相互作用":
                 answers.append(outcome_nodes[i]["作用取值"])
+        
+        src = []
+        dst = []
+        for k in self.rels:
+            src.append(k[0])
+            dst.append(k[1])
+        self.src = src
+        self.dst = dst
 
         return ["相互作用结果"], [answers]
 
@@ -324,6 +343,15 @@ class QuestionParser:
 
         # 去重
         valid_nodes = list(set(valid_nodes1).intersection(set(valid_nodes2)))
+        node_names = [n["name"] for n in valid_nodes]
+        rels = {}
+        for k in self.rels:
+            if k[0] not in node_names and k[1] not in node_names:
+                pass
+            else:
+                rels[k] = self.rels[k]
+        self.rels = rels
+
         # get values
         value_nodes = []
         for node in valid_nodes:
@@ -334,6 +362,14 @@ class QuestionParser:
         # GET ANSWERS
         for i in range(len(value_nodes)):
             answers.append(value_nodes[i]["作用取值"])
+        
+        src = []
+        dst = []
+        for k in self.rels:
+            src.append(k[0])
+            dst.append(k[1])
+        self.src = src
+        self.dst = dst
 
         return ["临床建议"], [answers]
 
