@@ -143,8 +143,8 @@ def visualize(graph, label_keyword, limit=10, r_dir='bi', r_type=None, **prop_ke
     G = nx.from_pandas_edgelist(df, 'from', 'to', create_using=nx.DiGraph())
     pos = nx.spring_layout(G)
     nx.draw(G, pos, with_labels=True, node_color='skyblue', node_size=400, edge_color='#87CEFA70', width=3.0,
-            edge_cmap=plt.cm.Blues, arrows=True, font_size=6, arrowsize=15)
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=rel_dict, font_size=6, rotate=False)
+            edge_cmap=plt.cm.Blues, arrows=True, font_size=10, arrowsize=15)
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=rel_dict, font_size=10, rotate=False)
     plt.show()
 
 
@@ -161,8 +161,8 @@ def visualize_graph(from_list, to_list, rel_dict):
     G = nx.from_pandas_edgelist(df, 'from', 'to', create_using=nx.DiGraph())
     pos = nx.spring_layout(G)
     nx.draw(G, pos, with_labels=True, node_color='skyblue', node_size=400, edge_color='#87CEFA70', width=3.0,
-            edge_cmap=plt.cm.Blues, arrows=True, font_size=6, arrowsize=15)
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=rel_dict, font_size=6, rotate=False)
+            edge_cmap=plt.cm.Blues, arrows=True, font_size=10, arrowsize=15)
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=rel_dict, font_size=10, rotate=False)
     plt.show()
 
 
